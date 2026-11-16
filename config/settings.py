@@ -12,7 +12,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
-    "django.contrib.auth",
+    "django.contrib.auth",  # Used only for secure password hashing and permitted password validators.
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -25,7 +25,6 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -40,7 +39,6 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
         },
@@ -50,9 +48,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-# Supabase provides a managed PostgreSQL database. For local development,
-# use the Session Pooler connection details from Supabase Dashboard.
-# SSL is required for connections to Supabase.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -62,12 +57,11 @@ DATABASES = {
         "HOST": env("DB_HOST"),
         "PORT": env("DB_PORT", default="5432"),
         "CONN_MAX_AGE": 60,
-        "OPTIONS": {
-            "sslmode": env("DB_SSLMODE", default="require"),
-        },
+        "OPTIONS": {"sslmode": env("DB_SSLMODE", default="require")},
     }
 }
 
+# Django's built-in password validation is the only built-in account validation used.
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -87,7 +81,3 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-LOGIN_URL = "accounts:login"
-LOGIN_REDIRECT_URL = "accounts:dashboard_redirect"
-LOGOUT_REDIRECT_URL = "accounts:login"
