@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Log in | Netwatch</title></head>
+<body><main><h1>Log in to Netwatch</h1>
+{% if errors %}<ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+<form method="post">{% csrf_token %}
+<label>Username or email <input name="identifier" required></label>
+<label>Password <input type="password" name="password" required></label>
+<button type="submit">Log in</button></form>
+<p>New to Netwatch? <a href="{% url 'accounts:register' %}">Create an account</a></p></main></body></html>
