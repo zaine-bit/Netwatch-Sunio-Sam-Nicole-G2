@@ -1,33 +1,7 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Netwatch{% endblock %}</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Netwatch{% endblock %}</title>
 <style>
-:root{color-scheme:light;--ink:#172033;--muted:#667085;--line:#e5e9f0;--brand:#2563eb;--bg:#f4f7fb}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
-header{background:#101c35;color:#fff;padding:16px 5vw;display:flex;justify-content:space-between;align-items:center;gap:20px}
-.brand{color:#fff;font-weight:800;font-size:1.2rem;text-decoration:none;letter-spacing:.02em}
-nav{display:flex;align-items:center;gap:18px;flex-wrap:wrap}nav a,.nav-button{color:#dce7ff;text-decoration:none;font:inherit;background:none;border:0;cursor:pointer}
-.container{width:min(960px,92vw);margin:44px auto}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 12px 35px #101c3510}
-h1{margin:0 0 8px;font-size:clamp(1.7rem,4vw,2.25rem)}.muted{color:var(--muted)}
-.field{margin:18px 0}label{display:block;font-weight:650;margin-bottom:7px}
-input{width:100%;border:1px solid #cfd6e2;border-radius:9px;padding:12px 13px;font:inherit}
-input:focus{outline:3px solid #dbeafe;border-color:var(--brand)}
-.btn{display:inline-block;border:0;border-radius:9px;padding:11px 17px;background:var(--brand);color:#fff;text-decoration:none;font:inherit;font-weight:700;cursor:pointer}
-.btn.secondary{background:#eaf0fb;color:#1d3c75}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
-.message{border-radius:9px;padding:12px 14px;margin:0 0 16px;background:#e9f8ef;color:#17643a}
-.errorlist{color:#b42318;margin:7px 0 0;padding-left:20px;font-size:.92rem}.helptext{display:block;color:var(--muted);font-size:.88rem;margin-top:6px}
-table{width:100%;border-collapse:collapse;margin-top:18px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:.85rem}
-footer{text-align:center;color:var(--muted);padding:28px;font-size:.9rem}
-@media(max-width:560px){header{align-items:flex-start;flex-direction:column}.card{padding:21px}}
-</style></head>
-<body>
-<header><a class="brand" href="{% url 'accounts:dashboard_redirect' %}">◉ NETWATCH</a><nav>
-{% if user.is_authenticated %}<a href="{% url 'accounts:dashboard_redirect' %}">Dashboard</a><a href="{% url 'accounts:profile' %}">My profile</a>
-<form method="post" action="{% url 'accounts:logout' %}" style="margin:0">{% csrf_token %}<button class="nav-button" type="submit">Log out</button></form>
-{% else %}<a href="{% url 'accounts:login' %}">Log in</a><a href="{% url 'accounts:register' %}">Create account</a>{% endif %}
-</nav></header>
-<main class="container">{% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
-<footer>Netwatch · Clearer visibility for your network</footer>
-</body></html>
+:root{color-scheme:light;--ink:#172033;--muted:#667085;--line:#e5e9f0;--brand:#2563eb;--bg:#f4f7fb}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}header{background:#101c35;color:#fff;padding:16px 5vw;display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{color:#fff;font-weight:800;font-size:1.2rem;text-decoration:none;letter-spacing:.02em}nav{display:flex;align-items:center;gap:18px;flex-wrap:wrap}nav a,.nav-button{color:#dce7ff;text-decoration:none;font:inherit;background:none;border:0;cursor:pointer}.container{width:min(960px,92vw);margin:44px auto}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 12px 35px #101c3510}h1{margin:0 0 8px;font-size:clamp(1.7rem,4vw,2.25rem)}.muted{color:var(--muted)}.field{margin:18px 0}label{display:block;font-weight:650;margin-bottom:7px}input{width:100%;border:1px solid #cfd6e2;border-radius:9px;padding:12px 13px;font:inherit}input:focus{outline:3px solid #dbeafe;border-color:var(--brand)}.btn{display:inline-block;border:0;border-radius:9px;padding:11px 17px;background:var(--brand);color:#fff;text-decoration:none;font:inherit;font-weight:700;cursor:pointer}.btn.secondary{background:#eaf0fb;color:#1d3c75}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.message{border-radius:9px;padding:12px 14px;margin:0 0 16px;background:#e9f8ef;color:#17643a}.errorlist{color:#b42318;margin:7px 0 0;padding-left:20px;font-size:.92rem}.helptext{display:block;color:var(--muted);font-size:.88rem;margin-top:6px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:.85rem}footer{text-align:center;color:var(--muted);padding:28px;font-size:.9rem}@media(max-width:560px){header{align-items:flex-start;flex-direction:column}.card{padding:21px}}
+</style></head><body><header><a class="brand" href="{% url 'accounts:dashboard_redirect' %}">◉ NETWATCH</a><nav>
+{% if account %}<a href="{% url 'accounts:dashboard_redirect' %}">Dashboard</a><a href="{% url 'accounts:profile' %}">My profile</a><form method="post" action="{% url 'accounts:logout' %}" style="margin:0">{% csrf_token %}<button class="nav-button" type="submit">Log out</button></form>{% else %}<a href="{% url 'accounts:login' %}">Log in</a><a href="{% url 'accounts:register' %}">Create account</a>{% endif %}
+</nav></header><main class="container">{% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main><footer>Netwatch · Clearer visibility for your network</footer></body></html>
