@@ -61,7 +61,7 @@ DATABASES = {
         "PASSWORD": env("DB_PASSWORD"),
         "HOST": env("DB_HOST"),
         "PORT": env("DB_PORT", default="5432"),
-        "CONN_MAX_AGE": 60,
+        "CONN_MAX_AGE": 0,
         "OPTIONS": {
             "sslmode": env("DB_SSLMODE", default="require"),
         },
