@@ -1,67 +1,62 @@
 # Netwatch
 
-Netwatch is a full-stack Django web application concept for home and small-office network owners. It aims to make network activity easier to understand by helping users identify connected devices, review data usage, and receive warnings about unusual activity.
+Netwatch is a full-stack Django web application concept for home and small-office network owners.
 
 ## Technology stack
 
-- **Backend:** Python and Django
-- **Frontend:** Django Templates (server-rendered HTML)
-- **Database:** Supabase (managed PostgreSQL)
-- **Authentication:** Django's built-in authentication framework
-- **Configuration:** Environment variables loaded from a local `.env` file
+- Backend: Python and Django
+- Frontend: Django Templates (server-rendered HTML)
+- Database: Supabase (managed PostgreSQL)
+- Application accounts: Custom Netwatch account model, validation, login, logout, and session handling
+- Password security: Django password validators and secure password hash/check utilities only
+- Configuration: Environment variables loaded from a local .env file
 
 ## Current development phase
 
-The initial project foundation and first Account Feature implementation are in place on `feature/supabase-database`. The feature includes registration, login/logout, role-specific dashboards, and self-service profile editing. Continue testing locally against the Supabase database before considering the phase complete. The planned work is:
+The project foundation and Account Feature are being developed on feature/supabase-database. The user-facing Netwatch account flow is implemented independently of Django's built-in User model and authentication views/forms. It includes registration, username/email validation, duplicate checks, login by username or email, logout, role-specific dashboards, and profile editing.
 
-1. Project setup and Supabase PostgreSQL configuration
-2. User registration and validation
-3. Login, logout, and protected sessions
-4. Role-based Administrator and Network Owner dashboards
-5. User profile viewing and editing
-6. Account feature testing and documentation
+Django's password validation and password hashing utilities are retained for password security. Django's authentication middleware and admin integration remain available only for the separate Django backend admin site; the Netwatch account pages identify users through their own account_id session and the custom accounts.Account table.
 
-The built-in Django admin is reserved for backend administration. Netwatch will have its own user-facing dashboards and user-management interface.
+The feature branch includes a migration that creates the custom account table, copies existing Django users (including their compatible password hashes and staff-to-admin role), and removes the old Profile model that depended on Django's User model.
 
 ## Supabase database setup
 
-1. Create a project in [Supabase](https://supabase.com/).
-2. In the Supabase Dashboard, open **Project Settings → Database**.
-3. Find the **Connection string** section and choose the **Session Pooler** option. Use its host, port, database name, username, and password in your local environment file. The pooler is useful for local development environments that may use IPv4.
-4. In the project folder, copy `.env.example` to `.env`.
-5. Replace the sample `DB_HOST`, `DB_USER`, and `DB_PASSWORD` values with the exact values supplied by Supabase. Keep `DB_SSLMODE=require`.
-6. Generate a strong Django `SECRET_KEY` and replace the placeholder. Never commit your `.env` file.
+1. Create a project in Supabase.
+2. In the Supabase Dashboard, open Project Settings → Database.
+3. Find the Connection string section and choose the Session Pooler option. Use its host, port, database name, username, and password in your local environment file.
+4. In the project folder, copy .env.example to .env.
+5. Replace DB_HOST, DB_USER, and DB_PASSWORD with the values supplied by Supabase. Keep DB_SSLMODE=require.
+6. Generate a strong Django SECRET_KEY. Never commit your .env file.
 
-The example values in `.env.example` are placeholders, not working credentials. Supabase's pooler host and username include details specific to your project.
+The example values in .env.example are placeholders, not working credentials.
 
 ## Local setup (Windows PowerShell)
 
 1. Install Python 3.11+.
 2. Clone the repository and enter its directory.
-3. Create and activate a virtual environment:
+3. Switch to the correct feature branch:
 
-   ```powershell
+   git switch feature/supabase-database
+   git pull origin feature/supabase-database
+
+4. Create and activate a virtual environment:
+
    py -m venv venv
    .\venv\Scripts\Activate.ps1
-   ```
 
-4. Install dependencies:
+5. Install dependencies:
 
-   ```powershell
    pip install -r requirements.txt
-   ```
 
-5. Complete the Supabase database setup above and ensure your local `.env` file is configured.
-6. Apply migrations and run the development server:
+6. Configure your local .env file for Supabase.
+7. Apply migrations, run the account tests, and start the server:
 
-   ```powershell
    python manage.py migrate
+   python manage.py test accounts
    python manage.py runserver
-   ```
 
 ## Security notes
 
-- Never commit `.env`, database passwords, Supabase service-role keys, or Django secret keys.
-- The repository ignores local environment files and virtual environments.
-- Django connects directly to Supabase's managed PostgreSQL database using SSL. SQLite is not configured as a fallback.
-- Netwatch uses Django authentication for application accounts; Supabase is currently the hosted PostgreSQL database, not the application's login provider.
+- Never commit .env, database passwords, Supabase service-role keys, or Django secret keys.
+- Django connects directly to Supabase PostgreSQL using SSL. SQLite is not configured as a fallback.
+- Supabase is the hosted PostgreSQL database, not an authentication provider.
