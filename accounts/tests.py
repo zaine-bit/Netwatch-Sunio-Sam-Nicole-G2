@@ -31,8 +31,16 @@ class AccountFeatureTests(TestCase):
     def test_login_accepts_username_and_password(self):
         from django.contrib.auth.hashers import make_password
         Account.objects.create(username="member", email="member@example.com", password=make_password("StrongPassword!234"))
-        response = self.client.post(reverse("accounts:login"), {"identifier": "member", "password": "StrongPassword!234"})
-        self.assertRedirects(response, reverse("accounts:dashboard_redirect"))
+        response = self.client.post(
+            reverse("accounts:login"),
+            {"identifier": "member", "password": "StrongPassword!234"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            (reverse("accounts:dashboard_redirect"), 302),
+            response.redirect_chain,
+        )
         self.assertIn("account_id", self.client.session)
 
     def test_regular_account_cannot_open_admin_dashboard(self):
