@@ -12,7 +12,7 @@ Netwatch is a full-stack Django web application concept for home and small-offic
 
 ## Current development phase
 
-The initial project foundation is being established. The Account Feature will be developed in separate feature branches:
+The initial project foundation and first Account Feature implementation are in place on `feature/supabase-database`. The feature includes registration, login/logout, role-specific dashboards, and self-service profile editing. Continue testing locally against the Supabase database before considering the phase complete. The planned work is:
 
 1. Project setup and Supabase PostgreSQL configuration
 2. User registration and validation
