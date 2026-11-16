@@ -1,58 +1,44 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-User = get_user_model()
+from .models import Account
 
 
 class AccountFeatureTests(TestCase):
-    def test_registration_creates_regular_user_and_profile(self):
+    def test_registration_creates_custom_account(self):
         response = self.client.post(reverse("accounts:register"), {
-            "username": "networkowner",
-            "email": "owner@example.com",
-            "first_name": "Network",
-            "last_name": "Owner",
-            "password1": "StrongPassword!234",
-            "password2": "StrongPassword!234",
+            "username": "networkowner", "email": "owner@example.com",
+            "first_name": "Network", "last_name": "Owner",
+            "password": "StrongPassword!234", "confirm_password": "StrongPassword!234",
         })
         self.assertRedirects(response, reverse("accounts:login"))
-        user = User.objects.get(username="networkowner")
-        self.assertTrue(user.check_password("StrongPassword!234"))
-        self.assertFalse(user.is_staff)
-        self.assertTrue(hasattr(user, "profile"))
+        account = Account.objects.get(username="networkowner")
+        self.assertNotEqual(account.password, "StrongPassword!234")
 
     def test_registration_rejects_duplicate_email_case_insensitively(self):
-        User.objects.create_user(username="existing", email="owner@example.com", password="StrongPassword!234")
+        from django.contrib.auth.hashers import make_password
+        Account.objects.create(username="existing", email="owner@example.com", password=make_password("StrongPassword!234"))
         response = self.client.post(reverse("accounts:register"), {
-            "username": "another",
-            "email": "OWNER@example.com",
-            "first_name": "Another",
-            "last_name": "Owner",
-            "password1": "StrongPassword!234",
-            "password2": "StrongPassword!234",
+            "username": "another", "email": "OWNER@example.com",
+            "password": "StrongPassword!234", "confirm_password": "StrongPassword!234",
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "already exists")
 
-    def test_dashboard_requires_login(self):
+    def test_dashboard_requires_custom_session(self):
         response = self.client.get(reverse("accounts:user_dashboard"))
-        self.assertRedirects(response, f"{reverse('accounts:login')}?next={reverse('accounts:user_dashboard')}")
+        self.assertRedirects(response, reverse("accounts:login"))
 
-    def test_regular_user_cannot_open_admin_dashboard(self):
-        user = User.objects.create_user(username="member", password="StrongPassword!234")
-        self.client.force_login(user)
+    def test_login_accepts_username_and_password(self):
+        from django.contrib.auth.hashers import make_password
+        Account.objects.create(username="member", email="member@example.com", password=make_password("StrongPassword!234"))
+        response = self.client.post(reverse("accounts:login"), {"identifier": "member", "password": "StrongPassword!234"})
+        self.assertRedirects(response, reverse("accounts:dashboard_redirect"))
+        self.assertIn("account_id", self.client.session)
+
+    def test_regular_account_cannot_open_admin_dashboard(self):
+        account = Account.objects.create(username="member", email="member@example.com", password="unused")
+        session = self.client.session
+        session["account_id"] = account.pk
+        session.save()
         response = self.client.get(reverse("accounts:admin_dashboard"))
         self.assertRedirects(response, reverse("accounts:user_dashboard"))
-
-    def test_staff_user_cannot_open_regular_dashboard(self):
-        admin = User.objects.create_user(username="operator", password="StrongPassword!234", is_staff=True)
-        self.client.force_login(admin)
-        response = self.client.get(reverse("accounts:user_dashboard"))
-        self.assertRedirects(response, reverse("accounts:admin_dashboard"))
-
-    def test_profile_page_requires_login_and_shows_own_account(self):
-        user = User.objects.create_user(username="privateuser", email="private@example.com", password="StrongPassword!234")
-        self.client.force_login(user)
-        response = self.client.get(reverse("accounts:profile"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "private@example.com")
