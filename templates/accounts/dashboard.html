@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Dashboard | Netwatch</title></head>
+<body><main><h1>Welcome, {{ account.username }}</h1><p>Role: {{ account.get_role_display }}</p>
+<form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Log out</button></form>
+</main></body></html>
