@@ -117,3 +117,43 @@ class AccountFeatureTests(TestCase):
 
         self.assertRedirects(response, reverse("accounts:admin_dashboard"))
 
+    def test_registration_rejects_duplicate_username_case_insensitively(self):
+        from django.contrib.auth.hashers import make_password
+        Account.objects.create(
+            username="TakenName", email="taken@example.com",
+            password=make_password("StrongPassword!234"),
+        )
+        response = self.client.post(reverse("accounts:register"), {
+            "username": "takenname",
+            "email": "new@example.com",
+            "password": "StrongPassword!234",
+            "confirm_password": "StrongPassword!234",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "username is already taken")
+
+    def test_profile_rejects_another_accounts_email(self):
+        account = Account.objects.create(
+            username="profileone", email="one@example.com", password="unused"
+        )
+        Account.objects.create(
+            username="profiletwo", email="two@example.com", password="unused"
+        )
+        session = self.client.session
+        session["account_id"] = account.pk
+        session.save()
+
+        response = self.client.post(reverse("accounts:profile"), {
+            "username": "profileone",
+            "email": "TWO@example.com",
+            "first_name": "",
+            "last_name": "",
+            "contact_number": "",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already in use")
+        account.refresh_from_db()
+        self.assertEqual(account.email, "one@example.com")
+
