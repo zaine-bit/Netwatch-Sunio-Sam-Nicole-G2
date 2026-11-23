@@ -50,3 +50,70 @@ class AccountFeatureTests(TestCase):
         session.save()
         response = self.client.get(reverse("accounts:admin_dashboard"))
         self.assertRedirects(response, reverse("accounts:user_dashboard"))
+
+    def test_logout_clears_custom_account_session(self):
+        account = Account.objects.create(
+            username="logoutmember", email="logout@example.com", password="unused"
+        )
+        session = self.client.session
+        session["account_id"] = account.pk
+        session.save()
+
+        response = self.client.post(reverse("accounts:logout"))
+
+        self.assertRedirects(response, reverse("accounts:login"))
+        self.assertNotIn("account_id", self.client.session)
+
+    def test_inactive_account_session_is_cleared(self):
+        account = Account.objects.create(
+            username="inactive", email="inactive@example.com",
+            password="unused", is_active=False,
+        )
+        session = self.client.session
+        session["account_id"] = account.pk
+        session.save()
+
+        response = self.client.get(reverse("accounts:user_dashboard"))
+
+        self.assertRedirects(response, reverse("accounts:login"))
+        self.assertNotIn("account_id", self.client.session)
+
+    def test_profile_update_changes_only_signed_in_account(self):
+        account = Account.objects.create(
+            username="profileowner", email="profile@example.com", password="unused"
+        )
+        other = Account.objects.create(
+            username="otherowner", email="other@example.com", password="unused"
+        )
+        session = self.client.session
+        session["account_id"] = account.pk
+        session.save()
+
+        response = self.client.post(reverse("accounts:profile"), {
+            "username": "profileowner",
+            "email": "updated@example.com",
+            "first_name": "Updated",
+            "last_name": "Owner",
+            "contact_number": "09171234567",
+        })
+
+        self.assertRedirects(response, reverse("accounts:profile"))
+        account.refresh_from_db()
+        other.refresh_from_db()
+        self.assertEqual(account.email, "updated@example.com")
+        self.assertEqual(account.first_name, "Updated")
+        self.assertEqual(other.email, "other@example.com")
+
+    def test_administrator_cannot_open_owner_dashboard(self):
+        admin = Account.objects.create(
+            username="siteadmin", email="admin@example.com",
+            password="unused", role=Account.ROLE_ADMIN,
+        )
+        session = self.client.session
+        session["account_id"] = admin.pk
+        session.save()
+
+        response = self.client.get(reverse("accounts:user_dashboard"))
+
+        self.assertRedirects(response, reverse("accounts:admin_dashboard"))
+
