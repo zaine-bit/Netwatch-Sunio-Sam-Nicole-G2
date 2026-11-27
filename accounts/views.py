@@ -140,3 +140,58 @@ def profile(request):
 def logout(request):
     request.session.flush()
     return redirect("accounts:login")
+
+
+@account_login_required
+def device_list(request):
+    from .models import Device
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    devices = Device.objects.filter(user=request.account)
+    return _render(request, "accounts/device_list.html", {"devices": devices})
+
+
+@account_login_required
+def device_create(request):
+    from .forms import DeviceForm
+    from .models import Device
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    form = DeviceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        device = form.save(commit=False)
+        device.user = request.account
+        device.save()
+        messages.success(request, "Device registered successfully.")
+        return redirect("accounts:device_list")
+    return _render(request, "accounts/device_form.html", {"form": form, "page_title": "Register a device"})
+
+
+@account_login_required
+def device_update(request, device_id):
+    from django.shortcuts import get_object_or_404
+    from .forms import DeviceForm
+    from .models import Device
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    device = get_object_or_404(Device, pk=device_id, user=request.account)
+    form = DeviceForm(request.POST or None, instance=device)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Device details updated.")
+        return redirect("accounts:device_list")
+    return _render(request, "accounts/device_form.html", {"form": form, "page_title": "Edit device"})
+
+
+@require_POST
+@account_login_required
+def device_delete(request, device_id):
+    from django.shortcuts import get_object_or_404
+    from .models import Device
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    device = get_object_or_404(Device, pk=device_id, user=request.account)
+    device.status = Device.STATUS_REMOVED
+    device.save(update_fields=["status"])
+    messages.success(request, "Device marked as removed. Its history is retained.")
+    return redirect("accounts:device_list")

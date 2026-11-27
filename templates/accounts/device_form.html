@@ -1,0 +1,14 @@
+{% extends "accounts/base.html" %}
+{% block title %}{{ page_title }} · Netwatch{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted" style="margin-top:0">DEVICE MANAGEMENT</p>
+  <h1>{{ page_title }}</h1>
+  <p class="muted">Enter the device label, type, and unique MAC address.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="actions"><button class="btn" type="submit">Save device</button><a class="btn secondary" href="{% url 'accounts:device_list' %}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

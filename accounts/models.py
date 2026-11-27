@@ -27,3 +27,33 @@ class Account(models.Model):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
+
+
+class Device(models.Model):
+    STATUS_ACTIVE = "Active"
+    STATUS_REMOVED = "Removed"
+    STATUS_CHOICES = (
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_REMOVED, "Removed"),
+    )
+
+    user = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name="devices",
+    )
+    device_name = models.CharField(max_length=100)
+    device_type = models.CharField(max_length=50)
+    mac_address = models.CharField(max_length=17, unique=True)
+    date_registered = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_ACTIVE,
+    )
+
+    class Meta:
+        ordering = ["device_name", "id"]
+
+    def __str__(self):
+        return f"{self.device_name} ({self.mac_address})"

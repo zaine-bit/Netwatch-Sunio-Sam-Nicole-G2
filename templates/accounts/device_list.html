@@ -1,0 +1,29 @@
+{% extends "accounts/base.html" %}
+{% block title %}My devices · Netwatch{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted" style="margin-top:0">DEVICE MANAGEMENT</p>
+  <h1>My devices</h1>
+  <p class="muted">Only devices registered to your account are shown here.</p>
+  <div class="actions"><a class="btn" href="{% url 'accounts:device_create' %}">Register a device</a><a class="btn secondary" href="{% url 'accounts:dashboard_redirect' %}">Back to dashboard</a></div>
+  {% if devices %}
+  <table>
+    <thead><tr><th>Device</th><th>Type</th><th>MAC address</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for device in devices %}
+      <tr>
+        <td>{{ device.device_name }}</td><td>{{ device.device_type }}</td><td>{{ device.mac_address }}</td><td>{{ device.status }}</td>
+        <td>{% if device.status == "Active" %}<a href="{% url 'accounts:device_update' device.id %}">Edit</a>
+          <form method="post" action="{% url 'accounts:device_delete' device.id %}" style="display:inline" onsubmit="return confirm('Mark this device as removed? Its usage history will be retained.');">
+            {% csrf_token %}<button type="submit" style="border:0;background:none;color:#b42318;cursor:pointer;font:inherit">Remove</button>
+          </form>{% else %}<span class="muted">No actions</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">You haven't registered any devices yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
