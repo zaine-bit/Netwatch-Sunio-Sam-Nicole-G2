@@ -254,3 +254,86 @@ class DeviceManagementTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Device.objects.filter(device_name="Duplicate Device").exists())
+
+
+
+from datetime import timedelta
+from django.utils import timezone
+from .models import UsageLog
+
+
+class UsageTrackingTests(TestCase):
+    def setUp(self):
+        self.owner = Account.objects.create(
+            username="usageowner", email="usageowner@example.com", password="unused"
+        )
+        self.other_owner = Account.objects.create(
+            username="otherusage", email="otherusage@example.com", password="unused"
+        )
+        self.device = Device.objects.create(
+            user=self.owner, device_name="Owner Laptop", device_type="Laptop",
+            mac_address="AA:BB:CC:DD:EE:21",
+        )
+        self.other_device = Device.objects.create(
+            user=self.other_owner, device_name="Other Owner Phone", device_type="Phone",
+            mac_address="AA:BB:CC:DD:EE:22",
+        )
+        session = self.client.session
+        session["account_id"] = self.owner.pk
+        session.save()
+
+    def test_owner_can_record_daily_usage_for_own_device(self):
+        response = self.client.post(
+            reverse("accounts:usage_create", args=[self.device.pk]),
+            {"usage_date": timezone.localdate().isoformat(), "data_used_mb": "125.50"},
+        )
+        self.assertRedirects(
+            response, reverse("accounts:usage_list", args=[self.device.pk])
+        )
+        usage = UsageLog.objects.get(device=self.device)
+        self.assertEqual(str(usage.data_used_mb), "125.50")
+        self.assertEqual(usage.device, self.device)
+
+    def test_usage_history_only_shows_records_for_selected_owned_device(self):
+        UsageLog.objects.create(
+            device=self.device, usage_date=timezone.localdate(), data_used_mb="80.00"
+        )
+        response = self.client.get(
+            reverse("accounts:usage_list", args=[self.other_device.pk])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_owner_cannot_record_usage_for_another_owners_device(self):
+        response = self.client.post(
+            reverse("accounts:usage_create", args=[self.other_device.pk]),
+            {"usage_date": timezone.localdate().isoformat(), "data_used_mb": "25"},
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(UsageLog.objects.count(), 0)
+
+    def test_negative_usage_is_rejected(self):
+        response = self.client.post(
+            reverse("accounts:usage_create", args=[self.device.pk]),
+            {"usage_date": timezone.localdate().isoformat(), "data_used_mb": "-1"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "cannot be negative")
+        self.assertEqual(UsageLog.objects.count(), 0)
+
+    def test_future_usage_date_is_rejected(self):
+        future_date = (timezone.localdate() + timedelta(days=1)).isoformat()
+        response = self.client.post(
+            reverse("accounts:usage_create", args=[self.device.pk]),
+            {"usage_date": future_date, "data_used_mb": "20"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "cannot be in the future")
+        self.assertEqual(UsageLog.objects.count(), 0)
+
+    def test_removed_device_cannot_receive_new_usage_records(self):
+        self.device.status = Device.STATUS_REMOVED
+        self.device.save(update_fields=["status"])
+        response = self.client.get(
+            reverse("accounts:usage_create", args=[self.device.pk])
+        )
+        self.assertEqual(response.status_code, 404)
