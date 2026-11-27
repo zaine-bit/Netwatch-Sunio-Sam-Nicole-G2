@@ -1,1 +1,13 @@
-{% extends "accounts/base.html" %}{% block title %}My dashboard · Netwatch{% endblock %}{% block content %}<section class="card"><p class="muted" style="margin-top:0">NETWORK OWNER WORKSPACE</p><h1>Welcome, {{ account.first_name|default:account.username }}.</h1><p class="muted">You're signed in to Netwatch. Your personal network overview will appear here as monitoring features are added.</p><div class="actions"><a class="btn" href="{% url 'accounts:profile' %}">View / edit my profile</a></div></section>{% endblock %}
+{% extends "accounts/base.html" %}
+{% block title %}My dashboard · Netwatch{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted" style="margin-top:0">NETWORK OWNER WORKSPACE</p>
+  <h1>Welcome, {{ account.first_name|default:account.username }}.</h1>
+  <p class="muted">Register and manage the devices connected to your network. Usage summaries and alerts will appear as those Phase 2 features are added.</p>
+  <div class="actions">
+    <a class="btn" href="{% url 'accounts:device_list' %}">Manage my devices</a>
+    <a class="btn secondary" href="{% url 'accounts:profile' %}">View / edit my profile</a>
+  </div>
+</section>
+{% endblock %}
