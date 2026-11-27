@@ -191,6 +191,7 @@ def device_delete(request, device_id):
     if request.account.role != Account.ROLE_OWNER:
         return redirect("accounts:admin_dashboard")
     device = get_object_or_404(Device, pk=device_id, user=request.account)
-    device.delete()
-    messages.success(request, "Device removed.")
+    device.status = Device.STATUS_REMOVED
+    device.save(update_fields=["status"])
+    messages.success(request, "Device marked as removed. Its history is retained.")
     return redirect("accounts:device_list")
