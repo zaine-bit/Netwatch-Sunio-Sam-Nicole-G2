@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 
 
 class Account(models.Model):
@@ -57,3 +58,26 @@ class Device(models.Model):
 
     def __str__(self):
         return f"{self.device_name} ({self.mac_address})"
+
+
+class UsageLog(models.Model):
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.CASCADE,
+        related_name="usage_logs",
+    )
+    usage_date = models.DateField()
+    data_used_mb = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-usage_date", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(data_used_mb__gte=0),
+                name="usage_data_used_mb_non_negative",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.device.device_name}: {self.data_used_mb} MB on {self.usage_date}"
