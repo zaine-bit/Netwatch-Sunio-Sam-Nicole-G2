@@ -1,0 +1,17 @@
+{% extends "accounts/base.html" %}
+{% block title %}Record usage · Netwatch{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted" style="margin-top:0">DAILY USAGE TRACKING</p>
+  <h1>Record usage for {{ device.device_name }}</h1>
+  <p class="muted">Enter the amount of data this device used on the selected date. Use megabytes (MB).</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="actions">
+      <button class="btn" type="submit">Save usage record</button>
+      <a class="btn secondary" href="{% url 'accounts:usage_list' device.id %}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
