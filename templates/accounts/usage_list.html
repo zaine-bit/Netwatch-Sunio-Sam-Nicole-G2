@@ -1,0 +1,25 @@
+{% extends "accounts/base.html" %}
+{% block title %}Usage history · Netwatch{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted" style="margin-top:0">DAILY USAGE TRACKING</p>
+  <h1>{{ device.device_name }} usage</h1>
+  <p class="muted">Recorded data usage for this device, shown in megabytes (MB).</p>
+  <div class="actions">
+    {% if device.status == "Active" %}<a class="btn" href="{% url 'accounts:usage_create' device.id %}">Record daily usage</a>{% endif %}
+    <a class="btn secondary" href="{% url 'accounts:device_list' %}">Back to devices</a>
+  </div>
+  {% if usage_logs %}
+  <table>
+    <thead><tr><th>Usage date</th><th>Data used</th><th>Recorded at</th></tr></thead>
+    <tbody>
+      {% for entry in usage_logs %}
+      <tr><td>{{ entry.usage_date|date:"M j, Y" }}</td><td>{{ entry.data_used_mb|floatformat:2 }} MB</td><td>{{ entry.created_at|date:"M j, Y · g:i a" }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No usage has been recorded for this device yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -6,6 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .decorators import account_login_required
@@ -49,7 +50,7 @@ def register(request):
             errors["password"] = " ".join(exc.messages)
         if not errors:
             with transaction.atomic():
-                account = Account.objects.create(
+                Account.objects.create(
                     username=username, email=email, first_name=values["first_name"],
                     last_name=values["last_name"], password=make_password(password),
                 )
@@ -195,3 +196,43 @@ def device_delete(request, device_id):
     device.save(update_fields=["status"])
     messages.success(request, "Device marked as removed. Its history is retained.")
     return redirect("accounts:device_list")
+
+
+@account_login_required
+def usage_list(request, device_id):
+    from django.shortcuts import get_object_or_404
+    from .models import Device
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    device = get_object_or_404(Device, pk=device_id, user=request.account)
+    usage_logs = device.usage_logs.all()
+    return _render(request, "accounts/usage_list.html", {
+        "device": device,
+        "usage_logs": usage_logs,
+    })
+
+
+@account_login_required
+def usage_create(request, device_id):
+    from django.shortcuts import get_object_or_404
+    from .forms import UsageLogForm
+    from .models import Device
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    device = get_object_or_404(
+        Device, pk=device_id, user=request.account, status=Device.STATUS_ACTIVE
+    )
+    form = UsageLogForm(
+        request.POST or None,
+        initial={"usage_date": timezone.localdate()},
+    )
+    if request.method == "POST" and form.is_valid():
+        usage_log = form.save(commit=False)
+        usage_log.device = device
+        usage_log.save()
+        messages.success(request, "Daily usage record saved.")
+        return redirect("accounts:usage_list", device_id=device.pk)
+    return _render(request, "accounts/usage_form.html", {
+        "device": device,
+        "form": form,
+    })
