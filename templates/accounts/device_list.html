@@ -13,10 +13,10 @@
       {% for device in devices %}
       <tr>
         <td>{{ device.device_name }}</td><td>{{ device.device_type }}</td><td>{{ device.mac_address }}</td><td>{{ device.status }}</td>
-        <td><a href="{% url 'accounts:device_update' device.id %}">Edit</a>
-          <form method="post" action="{% url 'accounts:device_delete' device.id %}" style="display:inline" onsubmit="return confirm('Remove this device? Its related usage and alerts will also be deleted.');">
+        <td>{% if device.status == "Active" %}<a href="{% url 'accounts:device_update' device.id %}">Edit</a>
+          <form method="post" action="{% url 'accounts:device_delete' device.id %}" style="display:inline" onsubmit="return confirm('Mark this device as removed? Its usage history will be retained.');">
             {% csrf_token %}<button type="submit" style="border:0;background:none;color:#b42318;cursor:pointer;font:inherit">Remove</button>
-          </form>
+          </form>{% else %}<span class="muted">No actions</span>{% endif %}
         </td>
       </tr>
       {% endfor %}
