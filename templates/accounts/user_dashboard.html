@@ -1,6 +1,13 @@
 {% extends "accounts/base.html" %}
 {% block title %}My dashboard · Netwatch{% endblock %}
 {% block content %}
+{% if unread_alert_count %}
+<section class="card" role="status" aria-live="polite" style="border-left:5px solid #d97706;background:#fffbeb;margin-bottom:20px">
+  <h2 style="margin-top:0">New unusual-usage alert{% if unread_alert_count != 1 %}s{% endif %}</h2>
+  <p>You have <strong>{{ unread_alert_count }} unread alert{% if unread_alert_count != 1 %}s{% endif %}</strong>. One or more of your devices recorded usage above its usual level.</p>
+  <a class="btn" href="{% url 'accounts:alert_list' %}">Review unread alerts</a>
+</section>
+{% endif %}
 <section class="card">
   <p class="muted" style="margin-top:0">NETWORK OWNER WORKSPACE</p>
   <h1>Welcome, {{ account.first_name|default:account.username }}.</h1>

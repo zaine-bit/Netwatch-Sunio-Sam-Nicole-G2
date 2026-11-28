@@ -432,3 +432,31 @@ class AlertSystemTests(TestCase):
         self.assertEqual(response.status_code, 404)
         alert.refresh_from_db()
         self.assertEqual(alert.status, Alert.STATUS_UNREAD)
+
+    def test_dashboard_shows_notice_for_owners_unread_alerts(self):
+        Alert.objects.create(
+            device=self.device, usage_amount="346.00", baseline_average="172.50"
+        )
+        Alert.objects.create(
+            device=self.other_device, usage_amount="500.00", baseline_average="100.00"
+        )
+
+        response = self.client.get(reverse("accounts:user_dashboard"))
+
+        self.assertContains(response, "New unusual-usage alert")
+        self.assertContains(response, "1 unread alert")
+        self.assertContains(response, "Review unread alerts")
+        self.assertNotContains(response, "Private Device")
+
+    def test_dashboard_does_not_show_notice_when_all_alerts_are_acknowledged(self):
+        Alert.objects.create(
+            device=self.device,
+            usage_amount="346.00",
+            baseline_average="172.50",
+            status=Alert.STATUS_ACKNOWLEDGED,
+        )
+
+        response = self.client.get(reverse("accounts:user_dashboard"))
+
+        self.assertNotContains(response, "New unusual-usage alert")
+        self.assertContains(response, "0 unread")
