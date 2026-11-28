@@ -14,7 +14,7 @@
       <tr>
         <td>{{ device.device_name }}</td><td>{{ device.device_type }}</td><td>{{ device.mac_address }}</td><td>{{ device.status }}</td>
         <td>
-          <a href="{% url 'accounts:usage_list' device.id %}">Usage history</a>
+          <a href="{% url 'accounts:usage_list' device.id %}">Usage history</a> · <a href="{% url 'accounts:alert_list' %}">Alerts</a>
           {% if device.status == "Active" %}
             · <a href="{% url 'accounts:usage_create' device.id %}">Record usage</a>
             · <a href="{% url 'accounts:device_update' device.id %}">Edit</a>
