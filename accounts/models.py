@@ -81,3 +81,40 @@ class UsageLog(models.Model):
 
     def __str__(self):
         return f"{self.device.device_name}: {self.data_used_mb} MB on {self.usage_date}"
+
+
+class Alert(models.Model):
+    STATUS_UNREAD = "Unread"
+    STATUS_ACKNOWLEDGED = "Acknowledged"
+    STATUS_CHOICES = (
+        (STATUS_UNREAD, "Unread"),
+        (STATUS_ACKNOWLEDGED, "Acknowledged"),
+    )
+
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.CASCADE,
+        related_name="alerts",
+    )
+    usage_log = models.ForeignKey(
+        UsageLog,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="alerts",
+    )
+    alert_date = models.DateTimeField(auto_now_add=True)
+    usage_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    baseline_average = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_UNREAD,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-alert_date", "-id"]
+
+    def __str__(self):
+        return f"{self.device.device_name}: unusual usage on {self.alert_date:%Y-%m-%d}"
