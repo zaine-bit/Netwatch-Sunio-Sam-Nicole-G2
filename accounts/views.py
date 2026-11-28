@@ -1,10 +1,12 @@
 import re
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import transaction\nfrom django.db.models import Avg
+from django.db import transaction
+from django.db.models import Avg
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -102,7 +104,20 @@ def admin_dashboard(request):
 def user_dashboard(request):
     if request.account.role == Account.ROLE_ADMIN:
         return redirect("accounts:admin_dashboard")
-    return _render(request, "accounts/user_dashboard.html")
+    devices = Device.objects.filter(user=request.account)
+    alerts = Alert.objects.filter(device__user=request.account).select_related("device")[:5]
+    unread_alert_count = Alert.objects.filter(
+        device__user=request.account, status=Alert.STATUS_UNREAD
+    ).count()
+    recent_usage = UsageLog.objects.filter(
+        device__user=request.account
+    ).select_related("device")[:5]
+    return _render(request, "accounts/user_dashboard.html", {
+        "devices": devices,
+        "alerts": alerts,
+        "unread_alert_count": unread_alert_count,
+        "recent_usage": recent_usage,
+    })
 
 
 @account_login_required
@@ -216,7 +231,6 @@ def usage_list(request, device_id):
 def usage_create(request, device_id):
     from django.shortcuts import get_object_or_404
     from .forms import UsageLogForm
-    from .models import Device
     if request.account.role != Account.ROLE_OWNER:
         return redirect("accounts:admin_dashboard")
     device = get_object_or_404(
@@ -230,13 +244,35 @@ def usage_create(request, device_id):
         usage_log = form.save(commit=False)
         usage_log.device = device
         usage_log.save()
-        messages.success(request, "Daily usage record saved.")
+
+        # Compare this record with the same device's previous seven calendar days.
+        baseline_start = usage_log.usage_date - timedelta(days=7)
+        baseline = UsageLog.objects.filter(
+            device=device,
+            usage_date__gte=baseline_start,
+            usage_date__lt=usage_log.usage_date,
+        ).aggregate(average=Avg("data_used_mb"))["average"]
+
+        if baseline is not None and usage_log.data_used_mb > baseline * 2:
+            Alert.objects.get_or_create(
+                usage_log=usage_log,
+                defaults={
+                    "device": device,
+                    "usage_amount": usage_log.data_used_mb,
+                    "baseline_average": baseline,
+                },
+            )
+            messages.warning(
+                request,
+                "Unusual usage detected. An alert was added to your dashboard.",
+            )
+        else:
+            messages.success(request, "Daily usage record saved.")
         return redirect("accounts:usage_list", device_id=device.pk)
     return _render(request, "accounts/usage_form.html", {
         "device": device,
         "form": form,
     })
-
 
 
 @account_login_required
