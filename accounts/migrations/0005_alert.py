@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Alert",
             fields=[
-                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("alert_date", models.DateTimeField(auto_now_add=True)),
                 ("usage_amount", models.DecimalField(decimal_places=2, max_digits=10)),
                 ("baseline_average", models.DecimalField(decimal_places=2, max_digits=10)),
