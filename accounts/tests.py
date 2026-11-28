@@ -337,3 +337,98 @@ class UsageTrackingTests(TestCase):
             reverse("accounts:usage_create", args=[self.device.pk])
         )
         self.assertEqual(response.status_code, 404)
+
+
+from .models import Alert
+
+
+class AlertSystemTests(TestCase):
+    def setUp(self):
+        self.owner = Account.objects.create(
+            username="alertowner", email="alertowner@example.com", password="unused"
+        )
+        self.other_owner = Account.objects.create(
+            username="alertother", email="alertother@example.com", password="unused"
+        )
+        self.device = Device.objects.create(
+            user=self.owner, device_name="Alert Laptop", device_type="Laptop",
+            mac_address="AA:BB:CC:DD:EE:31",
+        )
+        self.other_device = Device.objects.create(
+            user=self.other_owner, device_name="Private Device", device_type="Phone",
+            mac_address="AA:BB:CC:DD:EE:32",
+        )
+        session = self.client.session
+        session["account_id"] = self.owner.pk
+        session.save()
+
+    def add_baseline(self, amount="100.00"):
+        today = timezone.localdate()
+        for days_ago in range(1, 8):
+            UsageLog.objects.create(
+                device=self.device,
+                usage_date=today - timedelta(days=days_ago),
+                data_used_mb=amount,
+            )
+
+    def test_usage_more_than_double_seven_day_average_creates_alert(self):
+        self.add_baseline("100.00")
+        response = self.client.post(
+            reverse("accounts:usage_create", args=[self.device.pk]),
+            {"usage_date": timezone.localdate().isoformat(), "data_used_mb": "200.01"},
+        )
+        self.assertRedirects(response, reverse("accounts:usage_list", args=[self.device.pk]))
+        alert = Alert.objects.get(device=self.device)
+        self.assertEqual(str(alert.baseline_average), "100")
+        self.assertEqual(str(alert.usage_amount), "200.01")
+        self.assertEqual(alert.status, Alert.STATUS_UNREAD)
+        self.assertIsNotNone(alert.usage_log_id)
+
+    def test_usage_equal_to_double_average_does_not_create_alert(self):
+        self.add_baseline("100.00")
+        self.client.post(
+            reverse("accounts:usage_create", args=[self.device.pk]),
+            {"usage_date": timezone.localdate().isoformat(), "data_used_mb": "200.00"},
+        )
+        self.assertFalse(Alert.objects.filter(device=self.device).exists())
+
+    def test_first_usage_record_does_not_create_alert_without_baseline(self):
+        self.client.post(
+            reverse("accounts:usage_create", args=[self.device.pk]),
+            {"usage_date": timezone.localdate().isoformat(), "data_used_mb": "900.00"},
+        )
+        self.assertFalse(Alert.objects.filter(device=self.device).exists())
+
+    def test_alert_list_is_limited_to_signed_in_owners_devices(self):
+        Alert.objects.create(
+            device=self.device, usage_amount="250.00", baseline_average="100.00"
+        )
+        Alert.objects.create(
+            device=self.other_device, usage_amount="300.00", baseline_average="100.00"
+        )
+        response = self.client.get(reverse("accounts:alert_list"))
+        self.assertContains(response, "Alert Laptop")
+        self.assertNotContains(response, "Private Device")
+        self.assertEqual(response.context["alerts"].count(), 1)
+
+    def test_owner_can_acknowledge_own_alert(self):
+        alert = Alert.objects.create(
+            device=self.device, usage_amount="250.00", baseline_average="100.00"
+        )
+        response = self.client.post(
+            reverse("accounts:alert_acknowledge", args=[alert.pk])
+        )
+        self.assertRedirects(response, reverse("accounts:alert_list"))
+        alert.refresh_from_db()
+        self.assertEqual(alert.status, Alert.STATUS_ACKNOWLEDGED)
+
+    def test_owner_cannot_acknowledge_another_owners_alert(self):
+        alert = Alert.objects.create(
+            device=self.other_device, usage_amount="250.00", baseline_average="100.00"
+        )
+        response = self.client.post(
+            reverse("accounts:alert_acknowledge", args=[alert.pk])
+        )
+        self.assertEqual(response.status_code, 404)
+        alert.refresh_from_db()
+        self.assertEqual(alert.status, Alert.STATUS_UNREAD)
