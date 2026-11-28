@@ -15,5 +15,5 @@ urlpatterns = [
     path("devices/<int:device_id>/edit/", views.device_update, name="device_update"),
     path("devices/<int:device_id>/delete/", views.device_delete, name="device_delete"),
     path("devices/<int:device_id>/usage/", views.usage_list, name="usage_list"),
-    path("devices/<int:device_id>/usage/add/", views.usage_create, name="usage_create"),
+    path("devices/<int:device_id>/usage/add/", views.usage_create, name="usage_create"),\n    path("alerts/", views.alert_list, name="alert_list"),\n    path("alerts/<int:alert_id>/acknowledge/", views.alert_acknowledge, name="alert_acknowledge"),
 ]
