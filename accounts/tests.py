@@ -379,7 +379,7 @@ class AlertSystemTests(TestCase):
         )
         self.assertRedirects(response, reverse("accounts:usage_list", args=[self.device.pk]))
         alert = Alert.objects.get(device=self.device)
-        self.assertEqual(str(alert.baseline_average), "100")
+        self.assertEqual(alert.baseline_average, 100)
         self.assertEqual(str(alert.usage_amount), "200.01")
         self.assertEqual(alert.status, Alert.STATUS_UNREAD)
         self.assertIsNotNone(alert.usage_log_id)
