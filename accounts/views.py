@@ -4,13 +4,13 @@ from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import transaction\nfrom django.db.models import Avg
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .decorators import account_login_required
-from .models import Account
+from .models import Account, Alert, Device, UsageLog
 
 USERNAME_RE = re.compile(r"^[A-Za-z0-9._-]{3,30}$")
 EMAIL_RE = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$")
@@ -236,3 +236,29 @@ def usage_create(request, device_id):
         "device": device,
         "form": form,
     })
+
+
+
+@account_login_required
+def alert_list(request):
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    alerts = Alert.objects.filter(
+        device__user=request.account
+    ).select_related("device")
+    return _render(request, "accounts/alert_list.html", {"alerts": alerts})
+
+
+@require_POST
+@account_login_required
+def alert_acknowledge(request, alert_id):
+    from django.shortcuts import get_object_or_404
+    if request.account.role != Account.ROLE_OWNER:
+        return redirect("accounts:admin_dashboard")
+    alert = get_object_or_404(
+        Alert, pk=alert_id, device__user=request.account
+    )
+    alert.status = Alert.STATUS_ACKNOWLEDGED
+    alert.save(update_fields=["status"])
+    messages.success(request, "Alert acknowledged.")
+    return redirect("accounts:alert_list")
