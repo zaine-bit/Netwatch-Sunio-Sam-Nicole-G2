@@ -1,0 +1,36 @@
+{% extends "accounts/base.html" %}
+{% block title %}Usage alerts · Netwatch{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted" style="margin-top:0">ALERT CENTER</p>
+  <h1>Usage alerts</h1>
+  <p class="muted">Alerts are generated when a device's daily usage is more than double its average usage across the previous 7 calendar days.</p>
+  <div class="actions">
+    <a class="btn secondary" href="{% url 'accounts:dashboard_redirect' %}">Back to dashboard</a>
+    <a class="btn secondary" href="{% url 'accounts:device_list' %}">Manage devices</a>
+  </div>
+  {% if alerts %}
+  <table>
+    <thead><tr><th>Device</th><th>Alert date</th><th>Usage</th><th>7-day baseline</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for alert in alerts %}
+      <tr>
+        <td>{{ alert.device.device_name }}</td>
+        <td>{{ alert.alert_date|date:"M j, Y H:i" }}</td>
+        <td>{{ alert.usage_amount|floatformat:2 }} MB</td>
+        <td>{{ alert.baseline_average|floatformat:2 }} MB</td>
+        <td>{{ alert.status }}</td>
+        <td>{% if alert.status == "Unread" %}
+          <form method="post" action="{% url 'accounts:alert_acknowledge' alert.id %}">
+            {% csrf_token %}<button type="submit">Acknowledge</button>
+          </form>
+        {% else %}<span class="muted">No action needed</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No usage alerts yet. NetWatch will list an alert here when a device exceeds its threshold.</p>
+  {% endif %}
+</section>
+{% endblock %}

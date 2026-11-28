@@ -4,10 +4,32 @@
 <section class="card">
   <p class="muted" style="margin-top:0">NETWORK OWNER WORKSPACE</p>
   <h1>Welcome, {{ account.first_name|default:account.username }}.</h1>
-  <p class="muted">Register and manage the devices connected to your network. Usage summaries and alerts will appear as those Phase 2 features are added.</p>
+  <p class="muted">Review your registered devices, recorded usage, and unusual-usage alerts.</p>
   <div class="actions">
     <a class="btn" href="{% url 'accounts:device_list' %}">Manage my devices</a>
+    <a class="btn secondary" href="{% url 'accounts:alert_list' %}">Usage alerts ({{ unread_alert_count }} unread)</a>
     <a class="btn secondary" href="{% url 'accounts:profile' %}">View / edit my profile</a>
   </div>
+</section>
+<section class="card">
+  <h2>My devices</h2>
+  {% if devices %}<ul>{% for device in devices %}
+    <li><strong>{{ device.device_name }}</strong> — {{ device.device_type }} ({{ device.status }}) · <a href="{% url 'accounts:usage_list' device.id %}">Usage history</a></li>
+  {% endfor %}</ul>{% else %}<p class="muted">No devices registered yet.</p>{% endif %}
+</section>
+<section class="card">
+  <h2>Recent usage records</h2>
+  {% if recent_usage %}
+  <table><thead><tr><th>Device</th><th>Date</th><th>Usage</th></tr></thead><tbody>
+    {% for log in recent_usage %}<tr><td>{{ log.device.device_name }}</td><td>{{ log.usage_date }}</td><td>{{ log.data_used_mb|floatformat:2 }} MB</td></tr>{% endfor %}
+  </tbody></table>
+  {% else %}<p class="muted">No usage has been recorded yet.</p>{% endif %}
+</section>
+<section class="card">
+  <h2>Recent alerts</h2>
+  {% if alerts %}<ul>{% for alert in alerts %}
+    <li><strong>{{ alert.device.device_name }}</strong>: {{ alert.usage_amount|floatformat:2 }} MB compared with a 7-day average of {{ alert.baseline_average|floatformat:2 }} MB — {{ alert.status }}</li>
+  {% endfor %}</ul><a href="{% url 'accounts:alert_list' %}">View all alerts</a>
+  {% else %}<p class="muted">No unusual-usage alerts yet.</p>{% endif %}
 </section>
 {% endblock %}
